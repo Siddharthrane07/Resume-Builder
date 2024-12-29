@@ -2,15 +2,14 @@ import { FC } from 'react';
 import { useResumeStore } from '../store/useResumeStore';
 import { useNavigate } from 'react-router-dom';
 
-
 const Templates: FC = () => {
   const navigate = useNavigate();
   const { templates, selectedTemplate, setSelectedTemplate } = useResumeStore();
 
   const handleTemplateSelect = (template: string) => {
     setSelectedTemplate(template);
-    navigate('/resume-preview');
-  }
+    navigate('/customize');
+  };
 
   return (
     <div>
