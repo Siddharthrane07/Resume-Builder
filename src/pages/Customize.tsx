@@ -1,8 +1,78 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { Download } from 'lucide-react';
 
 const Customize: React.FC = () => {
   const [latexCode, setLatexCode] = useState<string>('');
   const [htmlOutput, setHtmlOutput] = useState<string>('');
+
+  useEffect(() => {
+    // Load data from localStorage when component mounts
+    const savedData = localStorage.getItem('resumeData');
+    if (savedData) {
+      try {
+        const parsedData = JSON.parse(savedData);
+        const generatedLatex = `\\documentclass{article}
+\\usepackage[a4paper,margin=1in]{geometry}
+\\usepackage{enumitem}
+\\begin{document}
+
+\\begin{center}
+{\\LARGE ${parsedData.personalInfo.firstName} ${parsedData.personalInfo.lastName}}\\[1em]
+${parsedData.personalInfo.email} | ${parsedData.personalInfo.phone}
+\\end{center}
+
+\\resumeSection{Summary}
+${parsedData.personalInfo.summary || 'N/A'}
+
+\\resumeSection{Experience}
+\\begin{itemize}[leftmargin=*]
+${parsedData.experience
+  .map(
+    (exp: any) =>
+      `\\resumeItem{\\textbf{${exp.position} at ${exp.company}} \\hfill ${exp.startDate || 'N/A'} - ${exp.endDate || 'N/A'}
+${exp.description || ''}}`
+  )
+  .join('\n')}
+\\end{itemize}
+
+\\resumeSection{Education}
+\\begin{itemize}[leftmargin=*]
+${parsedData.education
+  .map(
+    (edu: any) =>
+      `\\resumeItem{\\textbf{${edu.degree} from ${edu.institution}} \\hfill ${edu.startDate || 'N/A'} - ${edu.endDate || 'N/A'}}`
+  )
+  .join('\n')}
+\\end{itemize}
+
+\\resumeSection{Skills}
+\\begin{itemize}[leftmargin=*]
+${parsedData.skills.map((skill: any) => `\\resumeItem{${skill.name} (${skill.level})}}`).join('\n')}
+\\end{itemize}
+
+\\resumeSection{Projects}
+\\begin{itemize}[leftmargin=*]
+${parsedData.projects
+  .map(
+    (proj: any) =>
+      `\\resumeItem{\\textbf{${proj.name}}
+${proj.description || ''}
+\\textit{Technologies:} ${proj.technologies || 'N/A'}
+\\href{${proj.link || '#'}}{Project Link}}`
+  )
+  .join('\n')}
+\\end{itemize}
+
+\\end{document}`;
+
+        setLatexCode(generatedLatex);
+        const convertedHtml = convertLatexToHtml(generatedLatex);
+        setHtmlOutput(convertedHtml);
+      } catch (error) {
+        console.error('Error parsing saved data:', error);
+      }
+    }
+  }, []);
 
   const convertLatexToHtml = (latex: string): string => {
     // Remove preamble and document setup
@@ -14,7 +84,7 @@ const Customize: React.FC = () => {
       .replace(/\\begin{document}/, '')
       .replace(/\\end{document}/, '')
       .replace(/\\pagestyle{empty}/, '')
-      .replace(/%.*/g, ''); // Remove comments
+      .replace(/%.*/g, '');
 
     // Process center environment with name and contact info
     html = html.replace(
@@ -36,18 +106,12 @@ const Customize: React.FC = () => {
       '<h2 class="text-xl font-bold mt-6 mb-3 border-b border-gray-300 pb-1">$1</h2>'
     );
 
-    // Process job titles and company names
-    html = html.replace(
-      /\\textbf{([^}]+)}\s*\\hfill\s*([^\\]+)/g,
-      '<div class="flex justify-between items-center"><strong>$1</strong><span>$2</span></div>'
-    );
-
     // Process itemize environments
     html = html.replace(
       /\\begin{itemize}\[leftmargin=\*\]([\s\S]*?)\\end{itemize}/g,
       (_, items) => {
         const processedItems = items
-          .replace(/\\resumeItem{([^}]+)}/g, '<li class="mb-2">$1</li>')
+          .replace(/\\resumeItem{([\s\S]*?)}/g, '<li class="mb-2">$1</li>')
           .trim();
         return `<ul class="list-disc pl-5 space-y-1 my-2">${processedItems}</ul>`;
       }
@@ -62,7 +126,6 @@ const Customize: React.FC = () => {
       .replace(/\\hrule/g, '')
       .replace(/\\\\/g, '<br>')
       .replace(/\\href{([^}]+)}{([^}]+)}/g, '<a href="$1" class="text-blue-600 hover:underline">$2</a>')
-      // Clean up any remaining LaTeX commands and spacing
       .replace(/\\[a-zA-Z]+(\[[^\]]*\])?(\{[^}]*\})?/g, '')
       .replace(/\n\s*\n/g, '<br>')
       .replace(/\s+/g, ' ')
@@ -82,11 +145,30 @@ const Customize: React.FC = () => {
     setHtmlOutput(converted);
   };
 
+  const handleDownload = () => {
+    const element = document.createElement('a');
+    const file = new Blob([latexCode], { type: 'text/plain' });
+    element.href = URL.createObjectURL(file);
+    element.download = 'resume.tex';
+    document.body.appendChild(element);
+    element.click();
+    document.body.removeChild(element);
+  };
+
   return (
     <div className="flex flex-col lg:flex-row min-h-screen">
       {/* Left Side: LaTeX Input Area */}
       <div className="w-full lg:w-1/2 p-4">
-        <h1 className="text-xl font-bold mb-4">Customize Your Resume</h1>
+        <div className="flex justify-between items-center mb-4">
+          <h1 className="text-xl font-bold">Customize Your Resume</h1>
+          <button
+            onClick={handleDownload}
+            className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors"
+          >
+            <Download className="w-4 h-4" />
+            Download LaTeX
+          </button>
+        </div>
         <textarea
           value={latexCode}
           onChange={handleLatexChange}
