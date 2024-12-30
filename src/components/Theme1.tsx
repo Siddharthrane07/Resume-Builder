@@ -12,66 +12,62 @@ const Customize: React.FC = () => {
       try {
         const parsedData = JSON.parse(savedData);
         const generatedLatex = 
-`    \\documentclass[letterpaper,11pt]{article}
-        \\usepackage[empty]{fullpage}
-        \\usepackage{titlesec}
-        \\usepackage{enumitem}
-        \\usepackage[hidelinks]{hyperref}
-        \\usepackage{fancyhdr}
-        \\usepackage{tabularx}
-        \\pagestyle{fancy}
-        \\fancyhf{}
-        \\renewcommand{\\headrulewidth}
-        \\renewcommand{\\footrulewidth}
-        \\setlength{\\tabcolsep}
+`\\documentclass[letterpaper,11pt]{article}
+\\usepackage[empty]{fullpage}
+\\usepackage{titlesec}
+\\usepackage{enumitem}
+\\usepackage[hidelinks]{hyperref}
+\\usepackage{fancyhdr}
+\\usepackage{tabularx}
 
-        \\begin{document}
 
-        \\begin{center}
-          \\textbf{\\Huge ${parsedData.personalInfo.firstName} 
-          ${parsedData.personalInfo.lastName}} \\
-          \\vspace{1pt}
-          ${parsedData.personalInfo.phone} | \\href{mailto:${parsedData.personalInfo.email}}{Email} | 
-          \\href{${parsedData.personalInfo.linkedin}}{LinkedIn} | 
-          \\href{${parsedData.personalInfo.github}}{GitHub}
-        \\end{center}
-        \\resumeSection{Summary}
-        ${parsedData.personalInfo.summary || 'N/A'}
-        \\resumeSection{Experience}
+\\begin{document}
 
-        \\begin{itemize}[leftmargin=*]
-        ${parsedData.experience
-          .map(
-               (exp: any) =>
-               `\\resumeItem{\\textbf{${exp.position} at ${exp.company}} \\hfill ${exp.startDate || 'N/A'} - ${exp.endDate || 'N/A'}
-                ${exp.description || ''}}`
-  )
-  .join('\n')}
-\\end{itemize}
+\\begin
+  \\textbf{\\Huge ${parsedData.personalInfo.firstName} 
+  ${parsedData.personalInfo.lastName}} 
+  \\vspace{1pt}
+  ${parsedData.personalInfo.phone} | \\href{mailto:${parsedData.personalInfo.email}}{Email} | 
+  \\href{${parsedData.personalInfo.linkedin}}{LinkedIn} | 
+  \\href{${parsedData.personalInfo.github}}{GitHub}
+\\end
+\\resumeSection{Education}
+\\begin\\item \\textbf{${parsedData.education.institution}} \\\hfill ${parsedData.education.startDate} -- ${parsedData.education.endDate}
+  \\item ${parsedData.education.degree}, CGPA: ${parsedData.education.cgpa}
+\\end
 
-\\section*{Education}
-        \\begin{itemize}[leftmargin=*]
-          \\item \\textbf{${parsedData.education.institution}} \\hfill ${parsedData.education.startDate} -- ${parsedData.education.endDate}
-          \\item ${parsedData.education.degree}, CGPA: ${parsedData.education.cgpa}
-        \\end{itemize}
+\\resumeSection{Summary}
+${parsedData.personalInfo.summary || 'N/A'}
+\\resumeSection{Experience}
+\\begin${parsedData.experience
+  .map(
+       (exp: any) =>
+       `\\resumeItem\\textbf{${exp.position} at ${exp.company}}                 ${exp.startDate || 'N/A'} - ${exp.endDate || 'N/A'}
+       
+       ${exp.description || ''}`
+)
+.join('\n')}
+\\end
+
 
 \\resumeSection{Skills}
-\\begin{itemize}[leftmargin=*]
-${parsedData.skills.map((skill: any) => `\\resumeItem{${skill.name} (${skill.level})}}`).join('\n')}
-\\end{itemize}
+\\begin${parsedData.skills.map((skill: any) => `\\resumeItem\\${skill.name} ${skill.level}`).join('\n')}
+\\end
 
 \\resumeSection{Projects}
-\\begin{itemize}[leftmargin=*]
-${parsedData.projects
-  .map(
-    (proj: any) =>
-      `\\resumeItem{\\textbf{${proj.name}}
+\\begin${parsedData.projects
+.map(
+  (proj: any) =>
+    `\\resumeItem\\textbf{${proj.name}}
+  
 ${proj.description || ''}
-\\textit{Technologies:} ${proj.technologies || 'N/A'}
-\\href{${proj.link || '#'}}{Project Link}}`
-  )
-  .join('\n')}
-\\end{itemize}
+
+\\textit{Technologies:} 
+\\${proj.technologies || 'N/A'}
+\\href{${proj.link || '#'}}{Project Link}`
+)
+.join('\n')}
+\\end
 
 \\end{document}`;
 
@@ -98,10 +94,10 @@ ${proj.description || ''}
 
     // Process center environment with name and contact info
     html = html.replace(
-      /\\begin{center}([\s\S]*?)\\end{center}/g,
+      /\\begin{center}([\\s\\S]*?)\\end{center}/g,
       (_, content) => {
         let processedContent = content
-          .replace(/{\\LARGE\s+([^}]+)}\s*\\\[1em\]/g, '<h1 class="text-3xl font-extrabold mb-4">$1</h1>')
+          .replace(/{\\LARGE\\s+([^}]+)}\\s*\\\\\[1em\]/g, '<h1 class="text-3xl font-extrabold mb-4">$1</h1>')
           .replace(/\\href{([^}]+)}{([^}]+)}/g, '<a href="$1" class="text-blue-600 hover:underline">$2</a>')
           .replace(/\\\\/g, '<br>')
           .replace(/\|/g, ' | ');
@@ -118,10 +114,10 @@ ${proj.description || ''}
 
     // Process itemize environments
     html = html.replace(
-      /\\begin{itemize}\[leftmargin=\*\]([\s\S]*?)\\end{itemize}/g,
+      /\\begin{itemize}\\[leftmargin=\\*\\]([\\s\\S]*?)\\end{itemize}/g,
       (_, items) => {
         const processedItems = items
-          .replace(/\\resumeItem{([\s\S]*?)}/g, '<li class="mb-2">$1</li>')
+          .replace(/\\resumeItem{([\\s\\S]*?)}/g, '<li class="mb-2">$1</li>')
           .trim();
         return `<ul class="list-disc pl-5 space-y-1 my-2">${processedItems}</ul>`;
       }
@@ -136,7 +132,7 @@ ${proj.description || ''}
       .replace(/\\hrule/g, '')
       .replace(/\\\\/g, '<br>')
       .replace(/\\href{([^}]+)}{([^}]+)}/g, '<a href="$1" class="text-blue-600 hover:underline">$2</a>')
-      .replace(/\\[a-zA-Z]+(\[[^\]]*\])?(\{[^}]*\})?/g, '')
+      .replace(/\\[a-zA-Z]+(\\[[^\]]*\])?(\\{[^}]*\})?/g, '')
       .replace(/\n\s*\n/g, '<br>')
       .replace(/\s+/g, ' ')
       .trim();
